@@ -1,0 +1,74 @@
+
+
+buildscript {
+    repositories { jcenter() }
+    dependencies {
+        classpath "com.github.jengelman.gradle.plugins:shadow:1.2.2"
+    }
+}
+
+plugins {
+    id 'java' // or 'groovy' Must be explicitly applied
+    id 'com.github.johnrengelman.shadow' version "1.2.2"
+}
+
+defaultTasks 'shadowJar'
+
+if (!JavaVersion.current().java8Compatible) {
+    throw new IllegalStateException('''Nucleus:
+                                      |  This needs Java 8,
+                                      |  You are using something else,
+                                      |  Refresh. Try again.'''.stripMargin())
+}
+
+// Define a version registry so that we can avoid hard coding of the version numbers
+// Note that this applies only to dependencies and not to the plugins and build
+ext {
+    vertxVersion = '3.1.0'
+    slf4jVersion ='1.7.12'
+    junitVersion = '4.12'
+    logbackVersion = '1.0.13'
+}
+
+version = "0.1-snapshot"
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+    maven {
+        url = 'http://oss.sonatype.org/content/repositories/snapshots/'
+    }
+}
+
+dependencies {
+    compile "io.vertx:vertx-core:${vertxVersion}"
+    compile "io.vertx:vertx-web:${vertxVersion}"
+    compile "io.vertx:vertx-service-factory:${vertxVersion}"
+    // The production code uses the SLF4J logging API at compile time
+    // compile "org.slf4j:slf4j-api:${slf4jVersion}"
+    compile "ch.qos.logback:logback-classic:${logbackVersion}"
+
+    // Declare the dependency for your favourite test framework you want to use in your tests.
+    // TestNG is also supported by the Gradle Test task. Just change the
+    // testCompile dependency to testCompile 'org.testng:testng:6.8.1' and add
+    // 'test.useTestNG()' to your build script.
+    testCompile "junit:junit:${junitVersion}"
+}
+
+shadowJar {
+    classifier = 'fat'
+    manifest {
+        attributes 'Main-Class': 'io.vertx.core.Launcher'
+        attributes 'Main-Verticle': 'org.gooru.nucleus.bootstrap.BootstrapVerticle'
+        attributes 'Created-By' : 'Gooru.org'
+    }
+    mergeServiceFiles {
+        include 'META-INF/services/io.vertx.core.spi.VerticleFactory'
+    }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.7'
+}
+
