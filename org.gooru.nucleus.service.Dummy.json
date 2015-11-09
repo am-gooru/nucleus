@@ -1,0 +1,3 @@
+{
+	"main" : "org.gooru.nucleus.bootstrap.DummyVerticle"
+}
