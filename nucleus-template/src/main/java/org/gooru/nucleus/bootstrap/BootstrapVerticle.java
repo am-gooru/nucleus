@@ -5,6 +5,7 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
+import org.gooru.nucleus.global.constants.ConfigConstants;
 import org.gooru.nucleus.global.utils.Runner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +35,7 @@ public class BootstrapVerticle extends AbstractVerticle {
     initializeRoutes(router);
     // If the port is not present in configuration then we end up
     // throwing as we are casting it to int. This is what we want.
-    int port = config().getInteger("http.port");
+    int port = config().getInteger(ConfigConstants.HTTP_PORT);
     LOG.info("Http server starting on port {}", port);
     httpServer.requestHandler(router::accept).listen(port);
 
@@ -46,7 +47,7 @@ public class BootstrapVerticle extends AbstractVerticle {
   private void deployVerticles() {
     LOG.info("Starting to deploy other verticles...");
 
-    JsonArray verticlesList = config().getJsonArray("verticles.deploy.list");
+    JsonArray verticlesList = config().getJsonArray(ConfigConstants.VERTICLES_DEPLOY_LIST);
 
     for (int i = 0; i < verticlesList.size(); i++) {
       String verticleName = verticlesList.getString(i);
