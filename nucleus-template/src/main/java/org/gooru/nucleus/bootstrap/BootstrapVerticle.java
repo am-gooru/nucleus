@@ -10,6 +10,9 @@ import org.gooru.nucleus.global.utils.Runner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+
 /**
  * Created by ashish on 6/11/15.
  * This class is responsible to bootstrap the application.
@@ -49,16 +52,23 @@ public class BootstrapVerticle extends AbstractVerticle {
     LOG.info("Starting to deploy other verticles...");
 
     JsonArray verticlesList = config().getJsonArray(ConfigConstants.VERTICLES_DEPLOY_LIST);
+    CompletableFuture<Void>[] resultFutures = new CompletableFuture[verticlesList.size()];
 
     for (int i = 0; i < verticlesList.size(); i++) {
       final String verticleName = verticlesList.getString(i);
       // Note that verticle name should be starting with "service:" prefix
-      if (verticleName != null) {
+      if (verticleName != null && !verticleName.isEmpty()) {
         LOG.info("Starting verticle: {}", verticleName);
+
+        CompletableFuture<Void> deployFuture = new CompletableFuture<>();
+        resultFutures[i] = deployFuture;
+
         vertx.deployVerticle(verticleName, res -> {
           if (res.succeeded()) {
+            deployFuture.complete(null);
             LOG.info("Deployment id is: " + res.result() + " for verticle: " + verticleName);
           } else {
+            deployFuture.completeExceptionally(res.cause());
             LOG.info("Deployment failed!");
           }
         });
@@ -67,6 +77,22 @@ public class BootstrapVerticle extends AbstractVerticle {
         throw new IllegalArgumentException("Invalid verticle name specified in configuration. Aborting.");
       }
     }
+    vertx.executeBlocking(future -> {
+      future.complete();
+      try {
+        CompletableFuture.allOf(resultFutures).join();
+      } catch (CompletionException e) {
+        e.printStackTrace();
+        throw e;
+      }
+
+    }, blockingResult -> {
+      if (blockingResult.succeeded()) {
+        LOG.info("Deployment successful");
+      } else {
+        LOG.error("Error deploying verticles. Shutting down.");
+      }
+    });
 
   }
 
