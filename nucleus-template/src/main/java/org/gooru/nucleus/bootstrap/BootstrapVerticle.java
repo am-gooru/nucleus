@@ -38,6 +38,7 @@ public class BootstrapVerticle extends AbstractVerticle {
     int port = config().getInteger(ConfigConstants.HTTP_PORT);
     LOG.info("Http server starting on port {}", port);
     httpServer.requestHandler(router::accept).listen(port);
+    deployVerticles();
 
   }
 
@@ -50,11 +51,17 @@ public class BootstrapVerticle extends AbstractVerticle {
     JsonArray verticlesList = config().getJsonArray(ConfigConstants.VERTICLES_DEPLOY_LIST);
 
     for (int i = 0; i < verticlesList.size(); i++) {
-      String verticleName = verticlesList.getString(i);
-
+      final String verticleName = verticlesList.getString(i);
+      // Note that verticle name should be starting with "service:" prefix
       if (verticleName != null) {
         LOG.info("Starting verticle: {}", verticleName);
-        vertx.deployVerticle(verticleName);
+        vertx.deployVerticle(verticleName, res -> {
+          if (res.succeeded()) {
+            LOG.info("Deployment id is: " + res.result() + " for verticle: " + verticleName);
+          } else {
+            LOG.info("Deployment failed!");
+          }
+        });
       } else {
         LOG.error("Invalid verticle name specified in configuration. Aborting");
         throw new IllegalArgumentException("Invalid verticle name specified in configuration. Aborting.");

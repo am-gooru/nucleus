@@ -1,3 +1,6 @@
 {
-	"main" : "org.gooru.nucleus.bootstrap.DummyVerticle"
-}
+	"main" : "org.gooru.nucleus.bootstrap.DummyVerticle",
+	"options" : {
+		"instances" : 4
+	}
+} 

@@ -1,3 +1,5 @@
 {
-  "http.port" : 8080
+  "comment" : "This is bundled JSON file. Idea is that we should externalize this also as part of build. Currently this is going to hold the dev env information",
+  "http.port" : 8080,
+  "verticles.deploy.list": ["service:org.gooru.nucleus.service.Dummy"]
 }

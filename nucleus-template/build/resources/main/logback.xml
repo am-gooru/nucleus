@@ -7,10 +7,10 @@
         </layout>
     </appender>
 
-    <logger name="org.gooru.nucleus" level="TRACE"/>
+    <logger name="org.gooru.nucleus" level="debug"/>
 
 
-    <root level="debug">
+    <root level="info">
         <appender-ref ref="STDOUT" />
     </root>
 </configuration>

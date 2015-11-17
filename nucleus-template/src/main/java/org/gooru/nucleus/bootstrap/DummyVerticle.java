@@ -17,8 +17,8 @@ public class DummyVerticle extends AbstractVerticle {
   @Override
   public void start() throws Exception {
 
-    LOG.trace("Dummy verticle starting...");
-    LOG.trace("The main configuration is {}", config().getInteger("http.port"));
+    LOG.info("Dummy verticle starting...");
+    LOG.info("The main configuration is {}", config().getInteger("http.port"));
 
   }
 }
