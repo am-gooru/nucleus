@@ -1,6 +1,9 @@
 package org.gooru.nucleus.bootstrap;
 
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.json.JsonObject;
+import org.gooru.nucleus.global.constants.EndpointsConstants;
 import org.gooru.nucleus.global.utils.Runner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,5 +23,20 @@ public class DummyVerticle extends AbstractVerticle {
     LOG.info("Dummy verticle starting...");
     LOG.info("The main configuration is {}", config().getInteger("http.port"));
 
+    EventBus eb = vertx.eventBus();
+
+    eb.consumer(EndpointsConstants.DUMMY_ENDPOINT, message -> {
+
+      LOG.info("Received message: {}" + message.body());
+
+      final JsonObject result = new JsonObject().put("Organisation", "gooru.org").put("Product", "nucleus").put("purpose", "api")
+                                                .put("mission", "Honor the human right to education");
+
+      // Now send back reply
+      message.reply(result);
+    });
+
+    LOG.info("Receiver ready!");
   }
+
 }

@@ -29,3 +29,9 @@ Note that any options that need to be passed onto Vertx instance need to be pass
 If the *Service* model for deploying *Verticles* are used instead of hard coding names, then there is a need to have the service specific deployment file on class path. Ideally, it should not be bundled inside the *Jar*. However, "*java -jar*" command does not accept the "*-cp*". In this case, the proper way to run the *Jar* file would be to include class path for both the target *Jar*file and the directory containing the *JSON* deployment files; and run the main class as provided by *Vertx.io*. An example, assuming that *JSON* files are residing as sibling of current project would be
 
 > java -classpath ./:nucleus-template/build/libs/nucleus-template-0.1-snapshot-fat.jar: -Dvertx.logger-delegate-factory-class-name=io.vertx.core.logging.SLF4JLogDelegateFactory io.vertx.core.Launcher -conf nucleus-template/src/main/resources/nucleus.json
+
+Also note that if cluster manager is being used, then command line option _cluster_ should be used, as given below.
+
+> java -classpath ./:nucleus-template/build/libs/nucleus-template-0.1-snapshot-fat.jar: -Dvertx.logger-delegate-factory-class-name=io.vertx.core.logging.SLF4JLogDelegateFactory io.vertx.core.Launcher -conf nucleus-template/src/main/resources/nucleus.json -cluster
+
+The project already has dependency for hazelcast included. Currently, there is no cluster specific configuration done. That needs to be included in real deployment.

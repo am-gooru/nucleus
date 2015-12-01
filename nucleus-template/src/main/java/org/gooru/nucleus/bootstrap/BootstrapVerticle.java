@@ -1,11 +1,13 @@
 package org.gooru.nucleus.bootstrap;
 
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import org.gooru.nucleus.global.constants.ConfigConstants;
+import org.gooru.nucleus.global.constants.EndpointsConstants;
 import org.gooru.nucleus.global.utils.Runner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,13 +34,13 @@ public class BootstrapVerticle extends AbstractVerticle {
 
   @Override
   public void start() throws Exception {
-    HttpServer httpServer = vertx.createHttpServer();
+    final HttpServer httpServer = vertx.createHttpServer();
 
-    Router router = Router.router(vertx);
+    final Router router = Router.router(vertx);
     initializeRoutes(router);
     // If the port is not present in configuration then we end up
     // throwing as we are casting it to int. This is what we want.
-    int port = config().getInteger(ConfigConstants.HTTP_PORT);
+    final int port = config().getInteger(ConfigConstants.HTTP_PORT);
     LOG.info("Http server starting on port {}", port);
     httpServer.requestHandler(router::accept).listen(port);
     deployVerticles();
@@ -51,8 +53,8 @@ public class BootstrapVerticle extends AbstractVerticle {
   private void deployVerticles() {
     LOG.info("Starting to deploy other verticles...");
 
-    JsonArray verticlesList = config().getJsonArray(ConfigConstants.VERTICLES_DEPLOY_LIST);
-    CompletableFuture<Void>[] resultFutures = new CompletableFuture[verticlesList.size()];
+    final JsonArray verticlesList = config().getJsonArray(ConfigConstants.VERTICLES_DEPLOY_LIST);
+    final CompletableFuture<Void>[] resultFutures = new CompletableFuture[verticlesList.size()];
 
     for (int i = 0; i < verticlesList.size(); i++) {
       final String verticleName = verticlesList.getString(i);
@@ -60,7 +62,7 @@ public class BootstrapVerticle extends AbstractVerticle {
       if (verticleName != null && !verticleName.isEmpty()) {
         LOG.info("Starting verticle: {}", verticleName);
 
-        CompletableFuture<Void> deployFuture = new CompletableFuture<>();
+        final CompletableFuture<Void> deployFuture = new CompletableFuture<>();
         resultFutures[i] = deployFuture;
 
         vertx.deployVerticle(verticleName, res -> {
@@ -97,10 +99,19 @@ public class BootstrapVerticle extends AbstractVerticle {
   }
 
   private void initializeRoutes(Router router) {
+
+    EventBus eb = vertx.eventBus();
+
     router.route("/").handler(routingContext -> {
-      JsonObject result = new JsonObject().put("Organisation", "gooru.org").put("Product", "nucleus").put("purpose", "api")
-                                          .put("mission", "Honor the human right to education");
-      routingContext.response().end(result.toString());
+
+      eb.send(EndpointsConstants.DUMMY_ENDPOINT, "ping!", reply -> {
+        if (reply.succeeded()) {
+          LOG.info("Received reply " + reply.result().body());
+          routingContext.response().end(reply.result().body().toString());
+        } else {
+          LOG.info("No reply");
+        }
+      });
     });
   }
 }
