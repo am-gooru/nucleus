@@ -193,6 +193,60 @@ public class BootstrapVerticle extends AbstractVerticle {
 		routingContext.response().end(result.toString());
 	});
 
+	//Assessments
+	executePost(router, "assessments"); //Create assessment
+	executePut(router, "assessments/:Id"); //update assessment
+	executeDelete(router, "assessments/:Id"); //Delete assessment
+	executePost(router, "assessments/:Id/questions"); //Add question to assessment
+	executeDelete(router, "assessments/:assessmentId/questions/:Id"); //remove question from assessment
+	executePut(router, "assessments/:Id/questions"); //copy existing question to assessment
+	executePut(router, "assessments/:Id/questions/order"); //Reorder questions in assessments
+	
+	//list Collaborators for assessment
+	router.route(HttpMethod.GET, ConfigConstants.BASE_PATH + "assessments/:assessmentId/collaborators").handler(routingContext -> {
+		JsonArray result = new JsonArray().add(new JsonObject()
+									.put("gooruUid", "ee410cef-2a44-46ef-878d-172511e54e07")
+									.put("gooruOid", "14d4a284-5b67-45c9-99f9-4e0c174bddea")
+									.put("username","SachinZ601")
+									.put("emailId", "sachin@gooru.org")
+									.put("status", "active")
+									.put("profileImageUrl", "http://profile-images-goorulearning-org.s3.amazonaws.com/398b2cff-fbc7-4ec5-ae85-eab25882cf6b.png")
+									.put("associatedDate", "1447751112000"))
+							.add(new JsonObject()
+									.put("gooruOid", "14d4a284-5b67-45c9-99f9-4e0c174bddea")
+									.put("emailId", "sachin@gooru.org")
+									.put("status", "pending")
+									.put("associatedDate", "1447751112000"));
+		
+		routingContext.response().putHeader("content-type", "application/json");
+		routingContext.response().setStatusCode(200);
+		routingContext.response().end(result.toString());
+	});
+	
+	executePut(router, "assessments/:assessmentId/collaborators"); //update list of collaborators
+	
+	//get assessment by Id
+	router.route(HttpMethod.GET, ConfigConstants.BASE_PATH + "assessments/:Id").handler(routingContext -> {
+		String assessmentId = routingContext.request().getParam("Id");
+		JsonObject result = new JsonObject()
+									.put("id", assessmentId)
+									.put("type", "assessment")
+									.put("url","https://docs.oracle.com/javase/tutorial/java/concepts/")
+									.put("title", "Assessment on OOP introduction")
+									.put("thumbnail", "http://thumbnails-demo.s3.amazonaws.com/ee410cef-2a44-46ef-878d-172511e54e07.png")
+									.put("sharing", "anyonewithlink")
+									.put("learningObjective", new JsonObject())
+									.put("audience", new JsonObject())
+									.put("collaborator", new JsonObject())
+									.put("metadata", new JsonObject().put("depthOfKnowledge", new JsonArray().add(166).add(168)).put("21CenturySkills", new JsonArray()))
+									.put("login_required", "true")
+									.put("settings", new JsonObject().put("comment", "turn-on"));
+		
+		routingContext.response().putHeader("content-type", "application/json");
+		routingContext.response().setStatusCode(200);
+		routingContext.response().end(result.toString());
+	});
+		
 	// Collections
 	executePost(router, "collections"); //Create Collection
 	executePut(router, "collections/:Id"); //Update Collection
