@@ -21,13 +21,12 @@ public class DummyVerticle extends AbstractVerticle {
   public void start() throws Exception {
 
     LOG.info("Dummy verticle starting...");
-    LOG.info("The main configuration is {}", config().getInteger("http.port"));
 
     EventBus eb = vertx.eventBus();
 
     eb.consumer(EndpointsConstants.DUMMY_ENDPOINT, message -> {
 
-      LOG.info("Received message: {}" + message.body());
+      LOG.info("Received message: {}", message.body());
 
       final JsonObject result = new JsonObject().put("Organisation", "gooru.org").put("Product", "nucleus").put("purpose", "api")
                                                 .put("mission", "Honor the human right to education");
