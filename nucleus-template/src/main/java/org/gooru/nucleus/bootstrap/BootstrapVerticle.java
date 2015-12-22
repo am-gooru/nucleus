@@ -7,14 +7,30 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
+
+import org.gooru.nucleus.db.AssessmentImpl;
+import org.gooru.nucleus.db.AssessmentInterface;
+import org.gooru.nucleus.db.CollectionImpl;
+import org.gooru.nucleus.db.CollectionInterface;
+import org.gooru.nucleus.db.CourseImpl;
+import org.gooru.nucleus.db.CourseInterface;
+import org.gooru.nucleus.db.LessonImpl;
+import org.gooru.nucleus.db.LessonInterface;
+import org.gooru.nucleus.db.QuestionImpl;
 import org.gooru.nucleus.global.constants.ConfigConstants;
 import org.gooru.nucleus.global.constants.EndpointsConstants;
 import org.gooru.nucleus.global.utils.Runner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import org.gooru.nucleus.queries.*;
+import org.gooru.nucleus.db.QuestionInterface;
+import org.gooru.nucleus.db.UnitImpl;
+import org.gooru.nucleus.db.UnitInterface;
 
 /**
  * Created by ashish on 6/11/15.
@@ -116,72 +132,16 @@ public class BootstrapVerticle extends AbstractVerticle {
     });
 
     // Resources
+    getResourceById (router, "resources/:resourceId");
     executePost(router, "resources"); // Create resource
     executePut(router, "resources/:Id"); // Update resource
 
-    // Get Resource By Id
-    router.route(HttpMethod.GET, ConfigConstants.BASE_PATH + "resources/:resourceId").handler(routingContext -> {
-      String resourseId = routingContext.request().getParam("resourceId");
-      JsonObject result = new JsonObject().put("id", resourseId).put("title", "This is my first resource")
-          .put("description", "This resource is useful for new learner").put("format", "webpage")
-          .put("thumbnail", "http://thumbnails-demo.s3.amazonaws.com/ee410cef-2a44-46ef-878d-172511e54e07.png")
-          .put("url", "http://en.wikipedia.org/wiki/Austin_M").put("sharing", "public").put("isFrameBreaker", "0")
-          .put("user",
-              new JsonObject().put("gooruUId", "ee410cef-2a44-46ef-878d-172511e54e07")
-                  .put("profileImageUrl",
-                      "http://profile-demo.s3.amazonaws.com/ee410cef-2a44-46ef-878d-172511e54e07.png")
-              .put("username", "SachinZ"))
-          .put("metadata",
-              new JsonObject().put("educationalUse", new JsonArray()).put("educationalRole", new JsonArray())
-                  .put("depthOfKnowledge", new JsonArray().add(166).add(168)).put("standards", new JsonArray())
-                  .put("readingLevel", new JsonArray()).put("advertisementLevel", new JsonArray())
-                  .put("hazardLevel", new JsonArray()).put("mediaFeatures", new JsonArray())
-                  .put("mobileFriendly", new JsonArray()).put("publisher", new JsonArray())
-                  .put("aggregator", new JsonArray()).put("fqdn", new JsonArray()));
-      routingContext.response().putHeader("content-type", "application/json");
-      routingContext.response().setStatusCode(200);
-      routingContext.response().end(result.toString());
-    });
-
     // Questions
+    // getQuestionById
+  //  getQuestionById(router, "questions/:questionId" );
     executePost(router, "questions"); // Create question
     executePut(router, "questions/:Id"); // update question
 
-    // getQuestionById
-    router.route(HttpMethod.GET, ConfigConstants.BASE_PATH + "questions/:questionId").handler(routingContext -> {
-      String questionId = routingContext.request().getParam("questionId");
-      JsonObject result = new JsonObject().put("id", questionId).put("itemSequence", "1").put("type", "FIB")
-          .put("title", "The binary system uses powers of")
-          .put("explanation", "This is the question related to basics of computer")
-          .put("hint",
-              new JsonArray().add(new JsonObject().put("hintId", "116390")
-                  .put("hintText", "<p>this is hint<br data-mce-bogus=\"1\"></p>").put("sequence", "1")))
-          .put("detail", new JsonArray())
-          .put("answer",
-              new JsonArray()
-                  .add(new JsonObject().put("answerId", "10860").put("answerText", "1").put("answerType", "text")
-                      .put("isCorrect", "true").put("sequence", "1"))
-              .add(new JsonObject().put("answerId", "10861").put("answerText", "15").put("answerType", "text")
-                  .put("isCorrect", "false").put("sequence", "2"))
-              .add(new JsonObject().put("answerId", "10862").put("answerText", "1").put("answerType", "text")
-                  .put("isCorrect", "false").put("sequence", "3"))
-              .add(new JsonObject().put("answerId", "10863").put("answerText", "1").put("answerType", "text")
-                  .put("isCorrect", "false").put("sequence", "4")))
-          .put("user",
-              new JsonObject().put("gooruUId", "ca56333a-73b8-4e41-a25e-a015fe4276d3")
-                  .put("profileImageUrl",
-                      "http://profile-demo.s3.amazonaws.com/ca56333a-73b8-4e41-a25e-a015fe4276d3.png")
-              .put("username", "sachin"))
-          .put("metadata",
-              new JsonObject().put("depthOfKnowledge", new JsonArray().add(166).add(168))
-                  .put("standards", new JsonArray()).put("21CenturySkills", new JsonArray())
-                  .put("learningTarget", new JsonArray()));
-      ;
-
-      routingContext.response().putHeader("content-type", "application/json");
-      routingContext.response().setStatusCode(200);
-      routingContext.response().end(result.toString());
-    });
 
     // Assessments
     executePost(router, "assessments"); // Create assessment
@@ -193,8 +153,7 @@ public class BootstrapVerticle extends AbstractVerticle {
                                                                       // question
                                                                       // from
                                                                       // assessment
-    executePut(router, "assessments/:Id/questions"); // copy existing question
-                                                     // to assessment
+    executePut(router, "assessments/:Id/questions"); // copy existing question to assessment
     executePut(router, "assessments/:Id/questions/order"); // Reorder questions
                                                            // in assessments
 
@@ -578,8 +537,186 @@ public class BootstrapVerticle extends AbstractVerticle {
       routingContext.response().setStatusCode(200);
       routingContext.response().end(result.toString());
     });
+    
+    copyQuestion(router, "questions/:questionId" );
+    copyQuestionToAssessment(router, "assessments/:Id/questions/:qId");
+    copyQuestionToCollection(router, "collections/:Id/questions/:qId");
+    copyCollection(router, "collections/:Id");
+    copyAssessment(router, "assessments/:Id");
+    copyLessonToUnit(router, "courses/:courseId/units/:unitId/lessons/:lessonId/:targetCourseId/:targetUnitId");
+    copyUnitToCourse(router, "courses/:courseId/units/:unitId/:targetCourseId");
+    copyCourse(router, "courses-copy/:courseId");
+    copyResourceToCollection(router, "collections/:Id/resources/:rId");
+
   }
   
+  private void copyCourse(Router router, String path) {
+    // TODO Auto-generated method stub
+    //copyCourse(router, "courses-copy/:courseId");
+    router.route(HttpMethod.GET, ConfigConstants.BASE_PATH + path).handler(routingContext -> {
+      String source_course_id = routingContext.request().getParam("courseId");
+        String logged_in_user = UUID.randomUUID().toString();
+      
+      CourseInterface ci = new CourseImpl();
+      try {
+        String new_course_id = ci.copyCourse(source_course_id, logged_in_user);
+        
+        LOG.info(" in copyCourse : {} " , new_course_id);
+      } catch (Exception e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();;
+      }      
+    });
+  }
+  
+  private void copyLessonToUnit(Router router, String path) {
+    // TODO Auto-generated method stub
+    //copyLessonToUnit(router, "courses/:courseId/units/:unitId/lessons/:lessonId/:targetCourseId/:targetUnitId");
+    router.route(HttpMethod.GET, ConfigConstants.BASE_PATH + path).handler(routingContext -> {
+      String source_course_id = routingContext.request().getParam("courseId");
+      String source_unit_id = routingContext.request().getParam("unitId");
+      String source_lesson_id = routingContext.request().getParam("lessonId");
+      String target_course_id = routingContext.request().getParam("targetCourseId");
+      String target_unit_id = routingContext.request().getParam("targetUnitId");
+      String logged_in_user = UUID.randomUUID().toString();
+      
+      LessonInterface li = new LessonImpl();
+      try {
+        String new_lesson_id = li.copyLessonToUnit(source_course_id, source_unit_id, source_lesson_id, target_course_id, target_unit_id, logged_in_user);
+        
+        LOG.info(" in copyLessonToUnit : {} " , new_lesson_id);
+      } catch (Exception e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();;
+      }      
+    });
+  }
+  
+  private void copyUnitToCourse(Router router, String path) {
+    // TODO Auto-generated method stub
+    //copyLessonToUnit(router, "courses/:courseId/units/:unitId/:targetCourseId");
+    router.route(HttpMethod.GET, ConfigConstants.BASE_PATH + path).handler(routingContext -> {
+      String source_course_id = routingContext.request().getParam("courseId");
+      String unit_id = routingContext.request().getParam("unitId");
+      String target_course_id = routingContext.request().getParam("targetCourseId");
+      String logged_in_user = UUID.randomUUID().toString();
+      
+      UnitInterface ui = new UnitImpl();
+      try {
+        String new_unit_id = ui.copyUnitToCourse(source_course_id, unit_id, target_course_id, logged_in_user);
+        
+        LOG.info(" in copyUnitToCourse : {} " , new_unit_id);
+      } catch (Exception e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();;
+      }      
+    });
+  }
+  
+  private void copyQuestionToAssessment(Router router, String path) {
+    // TODO Auto-generated method stub
+    router.route(HttpMethod.GET, ConfigConstants.BASE_PATH + path).handler(routingContext -> {
+      String target_assessment_id = routingContext.request().getParam("Id");
+      String question_id = routingContext.request().getParam("qId");
+      String logged_in_user_id = UUID.randomUUID().toString();
+      LOG.info(" in copyQuestionToAssessment : {}", target_assessment_id);
+      LOG.info(" in copyQuestionToAssessment : {}", question_id);
+      HashMap<String, String> resultHashmap= new HashMap<String, String>();
+      AssessmentInterface ai = new AssessmentImpl();
+      try {
+        resultHashmap  = ai.copyQuestionToAssessment(question_id, target_assessment_id, logged_in_user_id);
+        
+        LOG.info(" in copyQuestionToAssessment : {} {}" , resultHashmap.get("new_question_id"), resultHashmap.get("new_question_seq_id"));
+      } catch (Exception e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }      
+    });
+    
+  }
+  
+  private void copyQuestionToCollection(Router router, String path) {
+    // TODO Auto-generated method stub
+    router.route(HttpMethod.GET, ConfigConstants.BASE_PATH + path).handler(routingContext -> {
+      String target_collection_id = routingContext.request().getParam("Id");
+      String question_id = routingContext.request().getParam("qId");
+      String logged_in_user = UUID.randomUUID().toString();
+      LOG.info(" in copyQuestionToCollection : {}", target_collection_id);
+      LOG.info(" in copyQuestionToCollection : {}", question_id);
+      HashMap<String, String> resultHashmap= new HashMap<String, String>();
+      CollectionInterface ci = new CollectionImpl();
+      try {
+        resultHashmap  = ci.copyQuestionToCollection(question_id, target_collection_id, logged_in_user);
+        
+        LOG.info(" in copyQuestionToCollection : {} {}" , resultHashmap.get("new_question_id"), resultHashmap.get("new_question_seq_id"));
+      } catch (Exception e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }      
+    });
+  }
+  
+  private void copyResourceToCollection(Router router, String path) {
+    // TODO Auto-generated method stub
+    router.route(HttpMethod.GET, ConfigConstants.BASE_PATH + path).handler(routingContext -> {
+      String target_collection_id = routingContext.request().getParam("Id");
+      String resource_id = routingContext.request().getParam("rId");
+      String logged_in_user = UUID.randomUUID().toString();
+      LOG.info(" in copyResourceToCollection : {}", target_collection_id);
+      LOG.info(" in copyResourceToCollection : {}", resource_id);
+      HashMap<String, String> resultHashmap= new HashMap<String, String>();
+      CollectionInterface ci = new CollectionImpl();
+      try {
+        resultHashmap  = ci.copyResourceToCollection(resource_id, target_collection_id, logged_in_user);
+        
+        LOG.info(" in copyResourceToCollection : {} {}" , resultHashmap.get("new_generated_col_item_id"), resultHashmap.get("new_question_seq_id"));
+      } catch (Exception e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }      
+    });
+  }
+
+  private void copyCollection(Router router, String path) {
+    // TODO Auto-generated method stub
+    router.route(HttpMethod.GET, ConfigConstants.BASE_PATH + path).handler(routingContext -> {
+      String collection_id = routingContext.request().getParam("Id");
+      String logged_in_user = UUID.randomUUID().toString();
+      LOG.info(" in copyCollection : {}", collection_id);
+
+      CollectionInterface ci = new CollectionImpl();
+      try {
+        String newColId = ci.copyCollection(collection_id, logged_in_user);
+        
+        LOG.info(" in copyCollection : {} " , newColId);
+      } catch (Exception e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }      
+    });
+  }
+  
+  private void copyAssessment(Router router, String path) {
+    // TODO Auto-generated method stub
+    router.route(HttpMethod.GET, ConfigConstants.BASE_PATH + path).handler(routingContext -> {
+      String assessment_id = routingContext.request().getParam("Id");
+      String logged_in_user = UUID.randomUUID().toString();
+      LOG.info(" in copyAssessment : {}", assessment_id);
+
+      AssessmentInterface ai = new AssessmentImpl();
+      try {
+        String newAssId = ai.copyAssessment(assessment_id, logged_in_user);
+        
+        LOG.info(" in copyAssessment : {} " , newAssId);
+      } catch (Exception e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }      
+    });
+  }
+  
+  
+
   private void executePost(Router router, String path) {
   	router.route(HttpMethod.POST, ConfigConstants.BASE_PATH + path).handler(routingContext -> {
   	  routingContext.response().putHeader("Location", "ca56333a-73b8-4e41-a25e-a015fe4276d3");
@@ -603,5 +740,63 @@ public class BootstrapVerticle extends AbstractVerticle {
   	  routingContext.response().setStatusCode(204);
   	  routingContext.response().end();
   	});
+  }
+  
+  private void getResourceById(Router router, String path) {
+    router.route(HttpMethod.GET, ConfigConstants.BASE_PATH + path).handler(routingContext -> {
+      String resourceId = routingContext.request().getParam("resourceId");
+      ResourceQuery rsQuery = new ResourceQuery();
+      try {
+        rsQuery.getResourceById(resourceId);
+      } catch (Exception e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+
+      JsonObject result =
+              new JsonObject().put("id", resourceId).put("title", "This is my first resource")
+                      .put("description",
+                              "This resource is useful for new learner")
+                      .put("format", "webpage")
+                      .put("thumbnail",
+                              "http://thumbnails-demo.s3.amazonaws.com/ee410cef-2a44-46ef-878d-172511e54e07.png")
+                      .put("url", "http://en.wikipedia.org/wiki/Austin_M").put("sharing", "public").put("isFrameBreaker", "0")
+                      .put("user",
+                              new JsonObject().put("gooruUId", "ee410cef-2a44-46ef-878d-172511e54e07")
+                                      .put("profileImageUrl", "http://profile-demo.s3.amazonaws.com/ee410cef-2a44-46ef-878d-172511e54e07.png")
+                                      .put("username", "SachinZ"))
+              .put("metadata",
+                      new JsonObject().put("educationalUse", new JsonArray()).put("educationalRole", new JsonArray())
+                              .put("depthOfKnowledge", new JsonArray().add(166).add(168)).put("standards", new JsonArray())
+                              .put("readingLevel", new JsonArray()).put("advertisementLevel", new JsonArray()).put("hazardLevel", new JsonArray())
+                              .put("mediaFeatures", new JsonArray()).put("mobileFriendly", new JsonArray()).put("publisher", new JsonArray())
+                              .put("aggregator", new JsonArray()).put("fqdn", new JsonArray()));
+      routingContext.response().putHeader("content-type", "application/json");
+      routingContext.response().putHeader("Location", resourceId);
+      routingContext.response().setStatusCode(200);
+      routingContext.response().end(result.toString());
+
+    });
+    }
+    
+  private void copyQuestion(Router router, String path) {
+    // getQuestionById
+    router.route(HttpMethod.GET, ConfigConstants.BASE_PATH + "questions/:questionId").handler(routingContext -> {
+      String questionId = routingContext.request().getParam("questionId");
+      QuestionInterface qi = new QuestionImpl();
+      String logged_in_user_id = UUID.randomUUID().toString();
+      
+      try {
+        String new_q_id  = qi.copyQuestion(questionId, logged_in_user_id);
+        
+        LOG.info(" in getQById : {}" , new_q_id);
+      } catch (Exception e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }      
+      routingContext.response().setStatusCode(200);
+      routingContext.response().end();
+    });
+
   }
 }
